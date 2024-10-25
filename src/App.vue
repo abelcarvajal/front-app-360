@@ -1,7 +1,6 @@
 <script setup>
 import HelloWorld from './components/HelloWorld.vue'
-import Cargos from './components/Cargos.vue'
-import { routeLocationKey } from 'vue-router';
+/*import { routeLocationKey } from 'vue-router';*/
 </script>
 
 <template>

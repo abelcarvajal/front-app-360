@@ -1,7 +1,9 @@
 <script>
-    export default{
-        name:'Ejemplo',
-    }
+
+export default{
+    name:'Ejemplo',
+}
+
 </script>
 
 
