@@ -18,7 +18,7 @@
 </template>
 
 <script lang="ts" setup>
-import DarkModeToogle from './DarkModeToogle.vue';
+//import DarkModeToogle from './DarkModeToogle.vue';
 import { ref } from 'vue'
 
 const activeIndex = ref('1')
