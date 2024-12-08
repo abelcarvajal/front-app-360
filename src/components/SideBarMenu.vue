@@ -1,46 +1,40 @@
 <template>
     <el-menu :default-active="$route.path" router class="el-menu-vertical-demo">
-        <el-menu-item index="/colaboradores">
-            <el-icon>
-                <UserFilled />
-            </el-icon>
-            <template #title>Colaboradores</template>
-        </el-menu-item>
-        <el-menu-item index="cargos">
-            <el-icon><icon-menu /></el-icon>
-            <template #title>Cargos</template>
-        </el-menu-item>
-        <el-menu-item index="/criterios">
-            <el-icon>
-                <document />
-            </el-icon>
-            <template #title>Gestión de Criterios</template>
-        </el-menu-item>
-        <el-menu-item index="4">
-            <el-icon>
-                <setting />
-            </el-icon>
-            <template #title>Navigator Four</template>
-        </el-menu-item>
+        <el-sub-menu index="1">
+            <template #title>
+                <el-icon>
+                    <Setting />
+                </el-icon>
+                <span>Administración</span>
+            </template>
+            <el-menu-item index="/colaboradores">Colaboradores</el-menu-item>
+            <el-menu-item index="cargos">Cargos</el-menu-item>
+            <el-menu-item index="/criterios">Gestión de Criterios</el-menu-item>
+        </el-sub-menu>
+        
+        <el-sub-menu index="2">   
+            <template #title>
+                <el-icon><EditPen /></el-icon>
+                <span>Evaluación 360</span>
+            </template>
+            <el-menu-item index="/autoevaluacion">Autoevaluación</el-menu-item>
+            <el-menu-item index="/evaluacion">Evaluación</el-menu-item>
+            <el-menu-item index="/lideres">Evaluación equipo</el-menu-item>
+        </el-sub-menu>
+        
     </el-menu>
 </template>
 
 <script lang="ts" setup>
-//import { ref } from "vue";
+import { ref } from "vue";
 import {
     Document,
+    EditPen,
     Menu as IconMenu,
     Setting,
     UserFilled,
 } from "@element-plus/icons-vue";
 
-// const isCollapse = ref(true);
-// const handleOpen = (key: string, keyPath: string[]) => {
-//     console.log(key, keyPath);
-// };
-// const handleClose = (key: string, keyPath: string[]) => {
-//     console.log(key, keyPath);
-// };
 </script>
 
 <style>

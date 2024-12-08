@@ -5,7 +5,7 @@ import LayoutMain from '../components/LayoutMain.vue'
 import Login from '../components/Login.vue'
 import component from 'element-plus/es/components/tree-select/src/tree-select-option.mjs'
 import Criterios from '../views/criterios/criterios.vue'
-
+import Autoevaluacion from '../views/autoevaluacion/autoevaluacion.vue'
 
 const routes = [
 
@@ -33,6 +33,11 @@ const routes = [
         path:'/login',
         name:'login',
         component:Login,
+    },
+    {
+        path:'/autoevaluacion',
+        name:'autoevaluacion',
+        component:Autoevaluacion,
     }
 
 ]

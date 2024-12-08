@@ -2,16 +2,13 @@
     <el-menu :default-active="activeIndex" class="el-menu-demo" mode="horizontal" :ellipsis="false"
         @select="handleSelect">
         <el-menu-item index="0">
-            <img style="width: 100px" alt="Element logo" />
+            <img src="../assets/logo.png" style="width: 100px" alt="Element logo" />
         </el-menu-item>
         <el-sub-menu index="1">
             <template #title>Evalucion 360</template>
             <el-menu-item index="1-1">Perfil</el-menu-item>
             <el-menu-item index="1-2">Cerrar sesion</el-menu-item>
         </el-sub-menu>
-        <el-submenu-item index="2">
-            <DarkModeToogle />
-        </el-submenu-item>
         
     </el-menu>
     

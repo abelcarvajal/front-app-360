@@ -34,10 +34,11 @@ const titleButton = computed(() => (props.isEdit ? 'Actualizar' : 'Guardar'))
 
 const isVisible = computed(() => props.isOpen)
 
-const $emit = defineEmits(['update:isOpen', 'save', 'update'])
+const $emit = defineEmits(['update:isOpen', 'save', 'update', 'cancel'])
 
 const volver = () => {
     $emit('update:isOpen', false)
+    $emit('cancel')
 }
 const guardar = () => {
     if (props.isEdit) {

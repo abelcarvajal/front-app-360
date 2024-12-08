@@ -1,39 +1,45 @@
 <template>
-    <el-form ref="formRef" :model="form" :rules="formRules" label-width="auto" class="form-criterios">
-        <div class="form-container">
-            <div class="left-section">
-                <h4>Criterios de Evaluación</h4>
-                <el-form-item label="Categoría" prop="categoria">
-                    <el-input v-model="form.categoria" placeholder="Ingrese la categoría de criterio o Item" />
-                </el-form-item>
+    <div v-loading="loading" element-loading-text="Loading..."
+        :element-loading-spinner="$attrs['element-loading-spinner']"
+        :element-loading-svg-view-box="$attrs['element-loading-svg-view-box']"
+        :element-loading-background="$attrs['element-loading-background']">
+        <el-form :model="form" :rules="rules" ref="formRef" label-position="top">
+            <el-row :gutter="20">
+                <el-col :span="12">
+                    <el-form-item class="categoria" label="Categoría" prop="categoria">
+                        <el-input v-model="form.categoria" placeholder="Ingrese la categoría" />
+                    </el-form-item>
+                </el-col>
 
-                <el-form-item label="Descripción" prop="descripcion">
-                    <el-input v-model="form.descripcion" placeholder="Digite una descripción de la categoría"
-                        type="textarea" autosize />
-                </el-form-item>
-            </div>
-
-            <div class="right-section">
-                <el-collapse v-model="activeName" accordion>
-                    <el-collapse-item v-for="n in 5" :key="n" :title="`Criterio ${n}`" :name="n.toString()">
-                        <div>
-                            <el-form-item :prop="`criterio${n}`">
-                                <el-input v-model="form[`criterio${n}`]" type="textarea" autosize />
-                            </el-form-item>
-                        </div>
-                    </el-collapse-item>
-                </el-collapse>
-            </div>
-        </div>
-    </el-form>
+                <el-col :span="12">
+                    <el-form-item class="categoria" label="Descripción" prop="descripcion">
+                        <el-input v-model="form.descripcion" placeholder="Ingrese la descripción" type="textarea"
+                            autosize />
+                    </el-form-item>
+                </el-col>
+            </el-row>
+            <el-divider />
+            <el-row :gutter="20">
+                <el-col :span="12" v-for="n in 5" :key="n">
+                    <el-form-item :label="`Criterio ${n}`" :prop="`criterio${n}`">
+                        <el-input v-model="form[`criterio${n}`]" :placeholder="`Ingrese el criterio ${n}`"
+                            type="textarea" :rows="2" />
+                    </el-form-item>
+                </el-col>
+            </el-row>
+        </el-form>
+    </div>
 </template>
 
-<script setup>
-import { reactive, ref } from 'vue';
-const activeName = ref('1')
+<script setup lang="ts">
+import { ref } from 'vue'
+import type { FormInstance, FormRules } from 'element-plus'
+
+const formRef = ref<FormInstance>()
 
 
-const form = reactive({
+const form = ref({
+    id: null,
     categoria: '',
     descripcion: '',
     criterio1: '',
@@ -43,122 +49,67 @@ const form = reactive({
     criterio5: ''
 })
 
-const formRules = reactive({
+const rules: FormRules = {
     categoria: [
-        {
-            required: true,
-            message: 'Este campo no puede quedar vacío',
-            trigger: 'blur'
-        }
+        { required: true, message: 'La categoría es requerida', trigger: 'blur' }
     ],
-    descripcion: [{
-        required: true,
-        message: 'Este campo no puede quedar vacío',
-        trigger: 'blur'
-    }],
-    criterio1: [{
-        required: true,
-        message: 'Campo requerido',
-        trigger: 'blur'
-    }],
-    criterio2: [{
-        required: true,
-        message: 'Campo requerido',
-        trigger: 'blur'
-    }],
-    criterio3: [{
-        required: true,
-        message: 'Campo requerido',
-        trigger: 'blur'
-    }],
-    criterio4: [{
-        required: true,
-        message: 'Campo requerido',
-        trigger: 'blur'
-    }],
-    criterio5: [{
-        required: true,
-        message: 'Campo requerido',
-        trigger: 'blur'
-    }]
-})
-
-const formRef = ref(null)
+    descripcion: [
+        { required: true, message: 'La descripción es requerida', trigger: 'blur' }
+    ]
+}
 
 const validarForm = async () => {
-    // if (!formRef.value) return false
-    return new Promise((resolve) => {
-        formRef.value.validate((valid) => {
-            if (valid) {
-                resolve(true)
-            } else {
-                resolve(false)
-            }
-        })
-    })
+    if (!formRef.value) return false
+
+    try {
+        await formRef.value.validate()
+        return true
+    } catch (error) {
+        return false
+    }
+}
+
+const cargarDatos = (datos: any) => {
+    form.value = {
+        ...form.value,
+        ...datos
+    }
 }
 
 const limpiarFormulario = () => {
-    formRef.value.resetFields()
+    if (formRef.value) {
+        formRef.value.resetFields()
+        form.value = {
+            id: null,
+            categoria: '',
+            descripcion: '',
+            criterio1: '',
+            criterio2: '',
+            criterio3: '',
+            criterio4: '',
+            criterio5: ''
+        }
+    }
 }
+const props = defineProps({
+    loading: {
+        type: Boolean,
+        required: true
+    }
+})
 
-defineExpose({ validarForm, form, limpiarFormulario })
-
+defineExpose({
+    validarForm,
+    cargarDatos,
+    limpiarFormulario,
+    resetForm: () => formRef.value?.resetFields(),
+    form
+})
 </script>
-
 <style scoped>
-.form-criterios {
-    width: 100%;
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 20px;
-}
-
-.form-container {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 30px;
-}
-
-.left-section {
-    padding-right: 20px;
-}
-
-.right-section {
-    border-left: 1px solid #eee;
-    padding-left: 20px;
-}
-
-/* Estilos responsivos */
-@media (max-width: 768px) {
-    .form-container {
-        grid-template-columns: 1fr;
-        gap: 20px;
-    }
-
-    .left-section {
-        padding-right: 0;
-    }
-
-    .right-section {
-        border-left: none;
-        padding-left: 0;
-        border-top: 1px solid #eee;
-        padding-top: 20px;
-    }
-}
-
-h4 {
-    margin-bottom: 20px;
-    color: #333;
-}
-
-:deep(.el-collapse-item__header) {
-    font-weight: bold;
-    color: #626669;
-}
-
-:deep(.el-form-item__label) {
+.categoria {
+    margin-bottom: 10px;
+    text-emphasis-color: #414040;
     font-weight: bold;
 }
 </style>
