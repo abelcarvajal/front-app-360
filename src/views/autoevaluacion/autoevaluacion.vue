@@ -7,7 +7,11 @@
 
                 <template #slotForm>
                     <el-col :xs="24" :sm="24" :md="24" :lg="24" :xl="24">
-                        <formAutoevaluacion v-model:is-open="mostrarFormulario"/>
+                        <formAutoevaluacion 
+                            v-model:is-open="mostrarFormulario" 
+                            :is-edit="editandoFormulario"
+                            :criterios="criterios"
+                        />
                     </el-col>
                 </template>
 
@@ -41,10 +45,16 @@ import Header from '../../components/Header.vue'
 import formAutoevaluacion from './components/formAutoevaluacion.vue';
 import { Delete, Edit } from "@element-plus/icons-vue"
 import Formulario from '../../components/Formulario.vue';
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
+import axios from 'axios';
+import { ElMessage } from 'element-plus';
 
 const mostrarFormulario = ref(false)
 const editandoFormulario = ref(false)
+const refForm = ref();
+const criterios = ref([]);
+const dataCriterio = ref();
+const loadingTable = ref(false);
 
 const abrirFormulario = () => {
     mostrarFormulario.value = true
@@ -68,6 +78,39 @@ const tableData = [
         email: 'marlenyv@mail.com',
     },
 ];
+
+interface CriterioMapped extends CategoriaResponse {
+    [key: string]: any;
+}
+
+interface CategoriaResponse {
+    id?: number;
+    categoria?: string;
+    descripcion_categoria?: string;
+    criterios?: Array<{
+        id: number;
+        nombre: string;
+        descripcion: string;
+    }>;
+}
+
+const obtenerCriterios = async () => {
+    loadingTable.value = true;
+    try {
+        const response = await axios.get('http://127.0.0.1:8000/api/categorias/datos');
+        criterios.value = response.data.result;
+    } catch (error) {
+        console.error("Error al obtener criterios:", error);
+        ElMessage.error("Error al cargar los criterios");
+        criterios.value = [];
+    } finally {
+        loadingTable.value = false;
+    }
+};
+
+onMounted(() => {
+    obtenerCriterios();
+});
 
 </script>
 

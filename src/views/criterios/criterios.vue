@@ -3,7 +3,7 @@
         <template #slotLayout>
             <Header :title="'Criterios'" :titleButton="'Nuevo Criterio'" :abrir="abrirFormulario" />
 
-            <Formulario titulo="'Gestion de criterios de evaluación'" v-model:is-open="mostrarFormulario"
+            <Formulario titulo="Gestion de criterios de evaluación" v-model:is-open="mostrarFormulario"
                 :is-edit="editandoFormulario" @save="guardarDatos" @update="actualizarCriterio"
                 @cancel="obtenerCriterios">
                 <template #slotForm>

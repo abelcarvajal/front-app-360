@@ -23,7 +23,7 @@
                 <el-col :span="12" v-for="n in 5" :key="n">
                     <el-form-item :label="`Criterio ${n}`" :prop="`criterio${n}`">
                         <el-input v-model="form[`criterio${n}`]" :placeholder="`Ingrese el criterio ${n}`"
-                            type="textarea" :rows="2" />
+                            type="textarea" autosize :rows="2" />
                     </el-form-item>
                 </el-col>
             </el-row>
