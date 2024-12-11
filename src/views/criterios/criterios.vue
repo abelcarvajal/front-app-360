@@ -164,22 +164,38 @@ const actualizarCriterio = async () => {
 
         const urlActualizar = `http://127.0.0.1:8000/api/categorias/actualizar/${refForm.value.form.id}`;
         const formData = {
-            categoria: refForm.value.form.categoria,
-            descripcion: refForm.value.form.descripcion,
-            criterio1: refForm.value.form.criterio1 || "",
-            criterio2: refForm.value.form.criterio2 || "",
-            criterio3: refForm.value.form.criterio3 || "",
-            criterio4: refForm.value.form.criterio4 || "",
-            criterio5: refForm.value.form.criterio5 || "",
+            categoria: refForm.value.form.categoria?.trim(),
+            descripcion: refForm.value.form.descripcion?.trim(),
+            criterio1: refForm.value.form.criterio1?.trim() || "",
+            criterio2: refForm.value.form.criterio2?.trim() || "",
+            criterio3: refForm.value.form.criterio3?.trim() || "",
+            criterio4: refForm.value.form.criterio4?.trim() || "",
+            criterio5: refForm.value.form.criterio5?.trim() || ""
         };
 
-        await axios.put(urlActualizar, formData);
+        console.log('ID:', refForm.value.form.id);
+        console.log('Datos a enviar:', formData);
+
+        const response = await axios.put(urlActualizar, formData);
+        
+        console.log('Respuesta del servidor:', response.data);
+
         ElMessage.success("Criterio actualizado correctamente");
         mostrarFormulario.value = false;
         await obtenerCriterios();
         limpiarFormulario();
     } catch (error) {
-        ElMessage.error("Error al actualizar el criterio");
+        console.error("Error completo:", error);
+        console.error("Respuesta del servidor:", error.response?.data);
+
+        if (error.response?.data?.message) {
+            ElMessage.error(`Error del servidor: ${error.response.data.message}`);
+        } else if (error.response?.data?.errors) {
+            const errorMessages = Object.values(error.response?.data?.errors || {}) as string[];
+            errorMessages.forEach(message => ElMessage.error({ message }));
+        } else {
+            ElMessage.error(`Error al actualizar: ${error.message}`);
+        }
     } finally {
         loadingForm.value = false;
     }

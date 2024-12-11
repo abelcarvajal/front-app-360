@@ -4,7 +4,7 @@
          :element-loading-spinner="$attrs['element-loading-spinner']"
          :element-loading-svg-view-box="$attrs['element-loading-svg-view-box']"
          :element-loading-background="$attrs['element-loading-background']">
-        <el-form ref="ruleFormRef" :model="form" label-width="auto" style="max-width: 100%">
+        <el-form ref="formRef" :model="form" label-width="auto" style="max-width: 100%">
             <h4>Datos personales</h4>
             <el-row>
                 <el-col :span="12">
@@ -211,6 +211,8 @@
 
 <script setup>
 import { reactive, ref, onMounted, watch } from 'vue'
+
+const formRef = ref()
 
 // Inicializar el formulario con valores por defecto
 const form = reactive({
@@ -435,17 +437,15 @@ const formRules = reactive({
 const ruleFormRef = ref()
 
 const validarForm = async () => {
-    // if (!formRef.value) return false
-    return new Promise((resolve) => {
-        formRef.value.validate((valid) => {
-            if (valid) {
-                resolve(true)
-            } else {
-                resolve(false)
-            }
-        })
-    })
-}
+    if (!formRef.value) return false;
+    
+    try {
+        await formRef.value.validate();
+        return true;
+    } catch (error) {
+        return false;
+    }
+};
 
 const limpiarFormulario = () => {
     if (ruleFormRef.value) {

@@ -9,23 +9,13 @@
 
                 <template #slotForm>
                     <el-col :xs="24" :sm="24" :md="24" :lg="24" :xl="24">
-                        <formColaboradores 
-                            v-model:is-open="mostrarFormulario" 
-                            :is-edit="editandoFormulario"
-                            :tipoDocumento="tipoDocumento" 
-                            :paises="paises" 
-                            :departamentos="departamentos"
-                            :ciudades="ciudades" 
-                            :ciudadResidencia="ciudadResidencia" 
-                            :cargos="cargos"
-                            :programas="programas" 
-                            :centro_costo="centro_costo" 
-                            ref="refForm"
+                        <formColaboradores v-model:is-open="mostrarFormulario" :is-edit="editandoFormulario"
+                            :tipoDocumento="tipoDocumento" :paises="paises" :departamentos="departamentos"
+                            :ciudades="ciudades" :ciudadResidencia="ciudadResidencia" :cargos="cargos"
+                            :programas="programas" :centro_costo="centro_costo" ref="refForm"
                             @update:paisSeleccionado="handlePaisChange"
-                            @update:departamentosSeleccionado="handleDepartamentoChange"
-                            :loading="loadingForm"
-                            :element-loading-spinner="svg"
-                            element-loading-text="Loading..."
+                            @update:departamentosSeleccionado="handleDepartamentoChange" :loading="loadingForm"
+                            :element-loading-spinner="svg" element-loading-text="Loading..."
                             element-loading-svg-view-box="-10, -10, 50, 50"
                             element-loading-background="rgba(122, 122, 122, 0.8)" />
                     </el-col>
@@ -33,13 +23,9 @@
 
             </Formulario>
 
-            <div 
-            v-loading="loadingTable"
-            element-loading-text="Loading..."
-            :element-loading-spinner="svg"
-            element-loading-svg-view-box="-10, -10, 50, 50"
-            element-loading-background="rgba(122, 122, 122, 0.8)"
-            class="table-container">
+            <div v-loading="loadingTable" element-loading-text="Loading..." :element-loading-spinner="svg"
+                element-loading-svg-view-box="-10, -10, 50, 50" element-loading-background="rgba(122, 122, 122, 0.8)"
+                class="table-container">
                 <el-table :data="colaboradores">
                     <el-table-column fixed prop="nombre_completo" label="Nombre" width="250" />
                     <el-table-column prop="numero_documento" label="Did" width="120" />
@@ -124,7 +110,7 @@ const departamentoSeleccionado = ref<number | null>(null)
 const cargos = ref([])
 const programas = ref([])
 const centro_costo = ref([])
-const refForm = ref();
+const refForm = ref<InstanceType<typeof formColaboradores> | null>(null);
 const colaboradores = ref<Colaborador[]>([])
 const abrirFormulario = () => {
     mostrarFormulario.value = true
@@ -283,10 +269,15 @@ const handleDepartamentoChange = async (nuevoDepartamentoId: number | string) =>
 const guardarColaborador = async () => {
     loadingForm.value = true;
     try {
+        // Verifica que el formulario existe
         if (!refForm.value) {
             ElMessage.error('Error: Formulario no inicializado');
+            loadingForm.value = false;
             return;
         }
+
+        // Espera a que el DOM se actualice antes de validar
+        await nextTick();
 
         // Validar el formulario antes de enviar
         const validacion = await refForm.value.validarForm();
@@ -389,7 +380,7 @@ const obtenerColaboradores = async () => {
     try {
         const urlColaboradores = 'http://127.0.0.1:8000/api/colaborador/datos'
         const response = await axios.get(urlColaboradores);
-        
+
         const datos = response.data.result || response.data;
         if (!datos) {
             throw new Error('No hay datos disponibles');
@@ -408,11 +399,11 @@ const obtenerColaboradores = async () => {
         if (refForm.value) {
             // Resetear formulario base
             refForm.value.resetForm();
-            
+
             // Limpiar selectores en cascada
             handlePaisChange('');
             handleDepartamentoChange('');
-            
+
             // Forzar la limpieza de los campos problemáticos
             refForm.value.form.pais = '';
             refForm.value.form.departamento = '';
@@ -425,7 +416,7 @@ const obtenerColaboradores = async () => {
             departamentos.value = [];
             ciudades.value = [];
         }
-        
+
         mostrarFormulario.value = false;
         editandoFormulario.value = false;
 
@@ -513,7 +504,7 @@ const actualizarColaborador = async () => {
         }
 
         const formData = refForm.value.form;
-        
+
         if (!formData || !formData.id) {
             ElMessage.error('Error: Datos del formulario incompletos');
             return;
@@ -527,7 +518,7 @@ const actualizarColaborador = async () => {
         };
 
         const urlActualizar = `http://127.0.0.1:8000/api/colaborador/actualizar/${formData.id}`;
-        
+
         const datosActualizados = {
             nombres: formData.nombres,
             apellidos: formData.apellidos,
@@ -546,7 +537,7 @@ const actualizarColaborador = async () => {
         };
 
         const response = await axios.put(urlActualizar, datosActualizados);
-        
+
         if (response.data) {
             ElMessage.success('Colaborador actualizado exitosamente');
             await obtenerColaboradores();
@@ -581,7 +572,7 @@ const eliminarColaborador = async (id: number) => {
         if (result) {
             const urlEliminar = `http://127.0.0.1:8000/api/colaborador/borrar/${id}`;
             const response = await axios.delete(urlEliminar);
-            
+
             if (response.data && response.data.message) {
                 await obtenerColaboradores();
                 ElMessage({

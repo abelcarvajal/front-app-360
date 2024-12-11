@@ -3,37 +3,66 @@
         <template #slotLayout>
             <Header :title="'Autoevaluación'" :titleButton="'Autoevaluar'" :abrir="abrirFormulario" />
 
-            <Formulario :titulo="'Autoevaluación'" v-model:is-open="mostrarFormulario" :is-edit="editandoFormulario">
-
+            <Formulario 
+                :titulo="'Autoevaluación'" 
+                v-model:is-open="mostrarFormulario" 
+                :is-edit="editandoFormulario"
+                @save="guardarEvaluacion"
+            >
                 <template #slotForm>
                     <el-col :xs="24" :sm="24" :md="24" :lg="24" :xl="24">
                         <formAutoevaluacion 
+                            ref="formAutoevaluacionRef"
                             v-model:is-open="mostrarFormulario" 
                             :is-edit="editandoFormulario"
                             :criterios="criterios"
+                            :idColaborador="colaboradorActual"
                         />
                     </el-col>
                 </template>
-
             </Formulario>
 
-            <el-table :data="tableData" style="width: 100%" height="100%">
-                <el-table-column fixed prop="name" label="Nombre" width="250" />
-                <el-table-column prop="did" label="Did" width="100" />
-                <el-table-column prop="cargo" label="Cargo" width="100" />
-                <el-table-column prop="state" label="Departamento" width="150" />
-                <el-table-column prop="city" label="Ciudad" width="150" />
-                <el-table-column prop="address" label="Dirección" width="200" />
-                <el-table-column prop="phone" label="Teléfono" width="100" />
-                <el-table-column prop="email" label="Email" width="100" />
-                <el-table-column fixed="right" label="Opciones" min-width="120">
-                    <template #default>
-                        <el-button link type="primary" size="small" :icon="Edit" @click="editarFormulario"></el-button>
-                        <el-button link type="danger" :icon="Delete"></el-button>
+            <el-table :data="evaluaciones" style="width: 100%" height="100%">
+                <el-table-column prop="created_at" label="Fecha" width="150">
+                    <template #default="{ row }">
+                        {{ formatDateTime(row.created_at) }}
+                    </template>
+                </el-table-column>
+                <el-table-column prop="colaborador" label="Colaborador" width="200">
+                    <template #default="{ row }">
+                        {{ row.colaborador.nombres }} {{ row.colaborador.apellidos }}
+                    </template>
+                </el-table-column>
+                <el-table-column label="Tipo Evaluación" width="200">
+                    <template #default="{ row }">
+                        {{ row.evaluacion_tipos.tipo_evaluacion }}
+                    </template>
+                </el-table-column>
+                <el-table-column prop="promedio" label="Promedio" width="100">
+                    <template #default="{ row }">
+                        {{ calcularPromedio(row.detalle_evaluacion) }}
+                    </template>
+                </el-table-column>
+                <el-table-column label="Detalles" width="100">
+                    <template #default="{ row }">
+                        <el-button link type="primary" @click="verDetalles(row)">
+                            Ver
+                        </el-button>
                     </template>
                 </el-table-column>
             </el-table>
 
+            <el-dialog v-model="mostrarDetalles" title="Detalles de la Evaluación" width="70%">
+                <el-descriptions :column="1" border>
+                    <el-descriptions-item 
+                        v-for="detalle in detallesSeleccionados" 
+                        :key="detalle.id"
+                        :label="detalle.criterio?.criterio || 'Sin criterio'"
+                    >
+                        {{ detalle.valoracion }}
+                    </el-descriptions-item>
+                </el-descriptions>
+            </el-dialog>
         </template>
     </LayoutMain>
 </template>
@@ -45,7 +74,7 @@ import Header from '../../components/Header.vue'
 import formAutoevaluacion from './components/formAutoevaluacion.vue';
 import { Delete, Edit } from "@element-plus/icons-vue"
 import Formulario from '../../components/Formulario.vue';
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import axios from 'axios';
 import { ElMessage } from 'element-plus';
 
@@ -55,6 +84,11 @@ const refForm = ref();
 const criterios = ref([]);
 const dataCriterio = ref();
 const loadingTable = ref(false);
+const colaboradorActual = ref(1);
+const formAutoevaluacionRef = ref();
+const evaluaciones = ref([]);
+const mostrarDetalles = ref(false);
+const detallesSeleccionados = ref<DetalleEvaluacion[]>([]);
 
 const abrirFormulario = () => {
     mostrarFormulario.value = true
@@ -94,6 +128,14 @@ interface CategoriaResponse {
     }>;
 }
 
+interface DetalleEvaluacion {
+    id: number;
+    criterio: {
+        criterio: string;
+    };
+    valoracion: number;
+}
+
 const obtenerCriterios = async () => {
     loadingTable.value = true;
     try {
@@ -108,8 +150,47 @@ const obtenerCriterios = async () => {
     }
 };
 
+const guardarEvaluacion = async () => {
+    if (formAutoevaluacionRef.value) {
+        const resultado = await formAutoevaluacionRef.value.guardarEvaluacion();
+        if (resultado) {
+            mostrarFormulario.value = false;
+        }
+    }
+};
+
+const obtenerEvaluaciones = async () => {
+    try {
+        const response = await axios.get('http://127.0.0.1:8000/api/evaluacion/datos');
+        evaluaciones.value = response.data.result;
+    } catch (error) {
+        ElMessage.error('Error al cargar las evaluaciones');
+    }
+};
+
+const formatDateTime = (date: string) => {
+    return new Date(date).toLocaleString('es-ES',{
+        dateStyle: 'medium',
+        timeStyle: 'short',
+        hour12: true,
+    });
+};
+
+const calcularPromedio = (detalles: any[]) => {
+    if (!detalles?.length) return 0;
+    const suma = detalles.reduce((acc, det) => acc + det.valoracion, 0);
+    return (suma / detalles.length).toFixed(2);
+};
+
+const verDetalles = (row: any) => {
+    detallesSeleccionados.value = row.detalle_evaluacion || [];
+    mostrarDetalles.value = true;
+    console.log('Detalles de la fila:', row.detalle_evaluacion);   
+};
+
 onMounted(() => {
     obtenerCriterios();
+    obtenerEvaluaciones();
 });
 
 </script>
