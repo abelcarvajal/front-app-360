@@ -76,8 +76,8 @@
 
 <script lang="ts" setup>
 import { ref, computed, PropType, onMounted } from 'vue'
-import axios from 'axios'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import {api, ENDPOINTS} from '../../../config/api'
 
 const emit = defineEmits(['evaluacionGuardada']);
 
@@ -125,10 +125,11 @@ const tipoEvaluacionSeleccionado = computed(() =>
 // Función para obtener el nivel del criterio (1-5)
 const getCriterioNivel = (criterio: any) => {
     // Asumiendo que los criterios vienen ordenados del 1 al 5
-    const index = props.criterios.find(cat => 
+    const categoria = props.criterios.find(cat =>
         cat.criterios.some(c => c.id === criterio.id)
-    )?.criterios.findIndex(c => c.id === criterio.id);
-    
+    );
+    const index = categoria?.criterios.findIndex(c => c.id === criterio.id);
+    console.log('Criterio:', criterio, 'Categoria encontrada:', categoria, 'Index:', index, 'Nivel calculado:', index !== undefined ? index + 1 : '');
     return index !== undefined ? index + 1 : '';
 };
 
@@ -156,7 +157,7 @@ const isFormValid = computed(() => {
 // Obtener tipos de evaluación
 const obtenerTiposEvaluacion = async () => {
     try {
-        const response = await axios.get('http://127.0.0.1:8000/api/tipos/datos');
+        const response = await api.get(ENDPOINTS.TIPOS_DATOS);
         tiposEvaluacion.value = response.data.result;
     } catch (error) {
         ElMessage.error('Error al cargar tipos de evaluación');
@@ -185,7 +186,7 @@ const guardarEvaluacion = async () => {
 
         if (!confirmResult) return false;
 
-        const evaluacionResponse = await axios.post('http://127.0.0.1:8000/api/evaluacion/guardar', {
+        const evaluacionResponse = await api.post(ENDPOINTS.EVALUACION_GUARDAR, {
             fecha: new Date(),
             id_colab: props.idColaborador,
             id_tipo_ev: tipoEvaluacionId.value
@@ -202,7 +203,7 @@ const guardarEvaluacion = async () => {
             };
 
             console.log('Guardando detalle:', detalleData);
-            await axios.post('http://127.0.0.1:8000/api/detalle/guardar', detalleData);
+            await api.post(ENDPOINTS.DETALLE_GUARDAR, detalleData);
         }
 
         ElMessage.success('Evaluación guardada exitosamente');

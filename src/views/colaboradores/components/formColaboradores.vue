@@ -1,9 +1,8 @@
 <template>
-    <div v-loading="loading"
-         element-loading-text="Loading..."
-         :element-loading-spinner="$attrs['element-loading-spinner']"
-         :element-loading-svg-view-box="$attrs['element-loading-svg-view-box']"
-         :element-loading-background="$attrs['element-loading-background']">
+    <div v-loading="loading" element-loading-text="Loading..."
+        :element-loading-spinner="$attrs['element-loading-spinner']"
+        :element-loading-svg-view-box="$attrs['element-loading-svg-view-box']"
+        :element-loading-background="$attrs['element-loading-background']">
         <el-form ref="formRef" :model="form" label-width="auto" style="max-width: 100%">
             <h4>Datos personales</h4>
             <el-row>
@@ -20,13 +19,10 @@
             </el-row>
             <el-row>
                 <el-col :span="10">
-                    <el-form-item prop="tipoDocumento" label="Tipo de documento"  :rules="formRules.tipoDocumento">
+                    <el-form-item prop="tipoDocumento" label="Tipo de documento" :rules="formRules.tipoDocumento">
                         <el-select v-model="form.tipoDocumento" placeholder="Seleccione el tipo de documento">
-                            <el-option 
-                            v-for="tipo in tipoDocumento" 
-                            :key="tipo.id"
-                            :label="tipo.tipo_documento" 
-                            :value="tipo.id" />
+                            <el-option v-for="tipo in tipoDocumento" :key="tipo.id" :label="tipo.tipo_documento"
+                                :value="tipo.id" />
                         </el-select>
                     </el-form-item>
                 </el-col>
@@ -51,21 +47,12 @@
 
             <el-form-item label="Lugar de nacimiento" :rules="formRules.lugar">
                 <el-col :span="7">
-                    <el-select 
-                    v-model="form.pais" 
-                    placeholder="País" 
-                    filterable
-                    clearable
-                    @change="(value) => {
+                    <el-select v-model="form.pais" placeholder="País" filterable clearable @change="(value) => {
                         emit('update:paisSeleccionado', value);
                         form.departamento = null;
                         form.ciudad = null;
                     }">
-                        <el-option 
-                        v-for="pais in paises" 
-                        :key="pais.id" 
-                        :label="pais.nombre_pais" 
-                        :value="pais.id" />
+                        <el-option v-for="pais in paises" :key="pais.id" :label="pais.nombre_pais" :value="pais.id" />
                     </el-select>
                 </el-col>
                 <el-col :span="1">
@@ -73,21 +60,13 @@
                 </el-col>
 
                 <el-col :span="7">
-                    <el-select 
-                    v-model="form.departamento" 
-                    placeholder="Departamento"
-                    filterable
-                    clearable
-                    :disabled="!form.pais"
-                    @change="(value) => {
-                        emit('update:departamentosSeleccionado', value);
-                        form.ciudad = null;
-                    }">
-                        <el-option 
-                        v-for="departamento in departamentos" 
-                        :key="departamento.id"
-                        :label="departamento.nombre_departamento" 
-                        :value="departamento.id" />
+                    <el-select v-model="form.departamento" placeholder="Departamento" filterable clearable
+                        :disabled="!form.pais" @change="(value) => {
+                            emit('update:departamentosSeleccionado', value);
+                            form.ciudad = null;
+                        }">
+                        <el-option v-for="departamento in departamentos" :key="departamento.id"
+                            :label="departamento.nombre_departamento" :value="departamento.id" />
                     </el-select>
                 </el-col>
                 <el-col :span="1">
@@ -95,16 +74,10 @@
                 </el-col>
 
                 <el-col :span="8">
-                    <el-select 
-                    v-model="form.ciudad" 
-                    placeholder="Ciudad"
-                    filterable
-                    @change="(value) => emit('update:ciudadesSeleccionado', value)">
-                        <el-option 
-                        v-for="ciudad in ciudades" 
-                        :key="ciudad.id"
-                        :label="ciudad.nombre_municipio" 
-                        :value="ciudad.id" />
+                    <el-select v-model="form.ciudad" placeholder="Ciudad" filterable
+                        @change="(value) => emit('update:ciudadesSeleccionado', value)">
+                        <el-option v-for="ciudad in ciudades" :key="ciudad.id" :label="ciudad.nombre_municipio"
+                            :value="ciudad.id" />
                     </el-select>
                 </el-col>
 
@@ -116,21 +89,15 @@
                 <h3>Datos de contacto</h3>
             </el-row>
 
-        
+
 
             <el-row>
                 <el-col :span="6">
-                    <el-form-item label="Dirección de residencia" prop="lugarResidencia" >
-                        <el-select 
-                        v-model="form.ciudadResidencia" 
-                        placeholder="Ciudad"
-                        filterable
-                        @change="(value) => emit('update:ciudadResidenciaSeleccionado', value)">
-                        <el-option 
-                            v-for="ciudad in ciudadResidencia" 
-                            :key="ciudad.id"
-                            :label="ciudad.nombre_municipio" 
-                            :value="ciudad.id" />
+                    <el-form-item label="Dirección de residencia" prop="lugarResidencia">
+                        <el-select v-model="form.ciudadResidencia" placeholder="Ciudad" filterable
+                            @change="(value) => emit('update:ciudadResidenciaSeleccionado', value)">
+                            <el-option v-for="ciudad in ciudadResidencia" :key="ciudad.id"
+                                :label="ciudad.nombre_municipio" :value="ciudad.id" />
                         </el-select>
                     </el-form-item>
                 </el-col>
@@ -171,33 +138,24 @@
                 <el-col :span="6">
                     <el-form-item prop="cargo" label="Cargo" :rules="formRules.cargo">
                         <el-select v-model="form.cargo" placeholder="Seleccione el cargo">
-                            <el-option 
-                            v-for="cargo in cargos" 
-                            :key="cargo.id"
-                            :label="cargo.nombre_cargo" 
-                            :value="cargo.id" />
+                            <el-option v-for="cargo in cargos" :key="cargo.id" :label="cargo.nombre_cargo"
+                                :value="cargo.id" />
                         </el-select>
                     </el-form-item>
                 </el-col>
                 <el-col :span="6">
                     <el-form-item prop="programa" label="Programa" :rules="formRules.programa">
                         <el-select v-model="form.programa" placeholder="Seleccione el programa">
-                            <el-option 
-                            v-for="programa in programas" 
-                            :key="programa.id"
-                            :label="programa.nombre_programa" 
-                            :value="programa.id" />
+                            <el-option v-for="programa in programas" :key="programa.id"
+                                :label="programa.nombre_programa" :value="programa.id" />
                         </el-select>
                     </el-form-item>
                 </el-col>
                 <el-col :span="6">
                     <el-form-item prop="centro_costo" label="Centro de Costo" :rules="formRules.centro_costo">
                         <el-select v-model="form.centro_costo" placeholder="Seleccione el centro de costo">
-                            <el-option 
-                            v-for="centro_costo in centro_costo" 
-                            :key="centro_costo.id"
-                            :label="centro_costo.nombre_centro_costo" 
-                            :value="centro_costo.id" />
+                            <el-option v-for="centro_costo in centro_costo" :key="centro_costo.id"
+                                :label="centro_costo.nombre_centro_costo" :value="centro_costo.id" />
                         </el-select>
                     </el-form-item>
                 </el-col>
@@ -269,7 +227,7 @@ const props = defineProps({
         required: true,
         default: () => []
     },
-        centro_costo: {
+    centro_costo: {
         type: Array,
         required: true,
         default: () => []
@@ -438,7 +396,7 @@ const ruleFormRef = ref()
 
 const validarForm = async () => {
     if (!formRef.value) return false;
-    
+
     try {
         await formRef.value.validate();
         return true;
@@ -485,7 +443,7 @@ const resetForm = () => {
     if (ruleFormRef.value) {
         // Resetear el formulario de Element Plus
         ruleFormRef.value.resetFields();
-        
+
         // Resetear todos los campos manualmente
         form.value = {
             nombres: '',

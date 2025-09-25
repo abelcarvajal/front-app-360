@@ -50,30 +50,31 @@
 
 <script lang="ts" setup>
 import LayoutMain from '../../components/LayoutMain.vue';
-import Header from '../../components/Header.vue'
+import Header from '../../components/Header.vue';
 import formColaboradores from './components/formColaboradores.vue';
-import { Delete, Edit } from "@element-plus/icons-vue"
-import { Message, ElMessage, ElMessageBox, } from 'element-plus';
+import { Delete, Edit } from "@element-plus/icons-vue";
+import { ElMessage, ElMessageBox } from 'element-plus';
 import Formulario from '../../components/Formulario.vue';
 import { ref, onMounted, nextTick } from 'vue';
-import axios from 'axios';
+import { api, ENDPOINTS } from '../../config/api'; // ✅ Solo api y ENDPOINTS
 
-const loadingForm = ref(false)
-const loadingTable = ref(false)
 const svg = `
-        <path class="path" d="
-        M 30 15
-        L 28 17
-        M 25.61 25.61
-        A 15 15, 0, 0, 1, 15 30
-        A 15 15, 0, 1, 1, 27.99 7.5
-        L 15 15
-        " style="stroke-width: 4px; fill: rgba(0, 0, 0, 0)"/>
-        `
+    <path class="path" d="
+    M 30 15
+    L 28 17
+    M 25.61 25.61
+    A 15 15, 0, 0, 1, 15 30
+    A 15 15, 0, 1, 1, 27.99 7.5
+    L 15 15
+    " style="stroke-width: 4px; fill: rgba(0, 0, 0, 0)"/>
+`;
 
+const loadingForm = ref(false); 0
+const loadingTable = ref(false);
 
-const mostrarFormulario = ref(false)
-const editandoFormulario = ref(false)
+const mostrarFormulario = ref(false);
+const editandoFormulario = ref(false);
+
 interface Pais {
     id: number;
     nombre_pais: string;
@@ -100,149 +101,142 @@ interface Colaborador {
     email: string;
 }
 
-const tipoDocumento = ref([])
-const paises = ref<Pais[]>([])
-const departamentos = ref<Departamento[]>([])
-const ciudades = ref<Ciudad[]>([])
-const ciudadResidencia = ref([])
-const paisSeleccionado = ref<number | null>(null)
-const departamentoSeleccionado = ref<number | null>(null)
-const cargos = ref([])
-const programas = ref([])
-const centro_costo = ref([])
+const tipoDocumento = ref<any[]>([]);
+const paises = ref<Pais[]>([]);
+const departamentos = ref<Departamento[]>([]);
+const ciudades = ref<Ciudad[]>([]);
+const ciudadResidencia = ref<any[]>([]);
+const paisSeleccionado = ref<number | null>(null);
+const departamentoSeleccionado = ref<number | null>(null);
+const cargos = ref<any[]>([]);
+const programas = ref<any[]>([]);
+const centro_costo = ref<any[]>([]);
 const refForm = ref<InstanceType<typeof formColaboradores> | null>(null);
-const colaboradores = ref<Colaborador[]>([])
+const colaboradores = ref<Colaborador[]>([]);
+
 const abrirFormulario = () => {
-    mostrarFormulario.value = true
-    editandoFormulario.value = false
+    mostrarFormulario.value = true;
+    editandoFormulario.value = false;
 };
 
 const editarFormulario = async (row: number) => {
     loadingForm.value = true;
     try {
         await getColaboradorById(row);
-        mostrarFormulario.value = true
-        editandoFormulario.value = true
+        mostrarFormulario.value = true;
+        editandoFormulario.value = true;
     } catch (error) {
         console.error('Error al editar:', error);
         ElMessage.error('Error al cargar el formulario de edición');
     } finally {
         loadingForm.value = false;
     }
-}
+};
 
-
-
-//Obtener datos
+// === Funciones para obtener datos ===
 
 const getTipoDocumento = async () => {
-    const urlTipoDocumento = 'http://127.0.0.1:8000/api/tipodoc/datos'
     try {
-        axios.get(urlTipoDocumento)
-            .then(function (response) {
-                tipoDocumento.value = response.data.result
-            })
+        const response = await api.get(ENDPOINTS.TIPODOC_DATOS);
+        tipoDocumento.value = response.data.result;
     } catch (error) {
         ElMessage.error('Error al obtener tipos de documento');
+        console.error(error);
     }
-}
+};
 
 const getPais = async () => {
-    const urlPais = 'http://127.0.0.1:8000/api/pais/datos'
     try {
-        axios.get(urlPais)
-            .then(function (response) {
-                paises.value = response.data.result
-            })
+        const response = await api.get(ENDPOINTS.PAIS_DATOS);
+        paises.value = response.data.result;
     } catch (error) {
         ElMessage.error('Error al obtener países');
+        console.error(error);
     }
-}
+};
 
 const getDepartamento = async (idPais: number) => {
-    if (!idPais) return
-    const urlDepartamento = `http://127.0.0.1:8000/api/departamento/datos/${idPais}`
+    if (!idPais) return;
     try {
-        const response = await axios.get(urlDepartamento)
-        if (Array.isArray(response.data)) {
-            departamentos.value = response.data.sort((a, b) => a.nombre_departamento.localeCompare(b.nombre_departamento))
-
+        const response = await api.get(ENDPOINTS.DEPARTAMENTO_DATOS(idPais));
+        if (Array.isArray(response.data.result)) {
+            departamentos.value = response.data.result.sort((a, b) =>
+                a.nombre_departamento.localeCompare(b.nombre_departamento)
+            );
         } else {
-            console.error('La respuesta no es un array:', response.data)
-            departamentos.value = []
+            console.error('La respuesta no contiene un array:', response.data);
+            departamentos.value = [];
         }
     } catch (error) {
-        console.error('Error al obtener departamentos:', error)
-        departamentos.value = []
+        console.error('Error al obtener departamentos:', error);
+        departamentos.value = [];
+        ElMessage.error('Error al cargar departamentos');
     }
-}
+};
 
 const getCiudad = async (idDepartamento: number) => {
-    const urlCiudad = `http://127.0.0.1:8000/api/municipio/datos/${idDepartamento}`
+    if (!idDepartamento) return;
     try {
-        const response = await axios.get(urlCiudad)
-        if (Array.isArray(response.data)) {
-            ciudades.value = response.data.sort((a, b) => a.nombre_municipio.localeCompare(b.nombre_municipio))
+        const response = await api.get(ENDPOINTS.MUNICIPIO_DATOS(idDepartamento));
+        if (Array.isArray(response.data.result)) {
+            ciudades.value = response.data.result.sort((a, b) =>
+                a.nombre_municipio.localeCompare(b.nombre_municipio)
+            );
+        } else {
+            ciudades.value = [];
         }
     } catch (error) {
-        console.error('Error al obtener ciudades:', error)
-        ciudades.value = []
+        console.error('Error al obtener ciudades:', error);
+        ciudades.value = [];
+        ElMessage.error('Error al cargar ciudades');
     }
-}
+};
 
 const getCiudadResidencia = async () => {
-    const urlCiudadResidencia = `http://127.0.0.1:8000/api/municipio/datos/2878`
     try {
-        const response = await axios.get(urlCiudadResidencia)
-        ciudadResidencia.value = response.data
-
+        const response = await api.get(ENDPOINTS.MUNICIPIO_RESIDENCIA);
+        ciudadResidencia.value = response.data.result || response.data;
     } catch (error) {
-        console.error('Error al obtener ciudades:', error)
-        ciudadResidencia.value = []
+        console.error('Error al obtener ciudad de residencia:', error);
+        ciudadResidencia.value = [];
+        ElMessage.error('Error al cargar ciudad de residencia');
     }
-}
+};
 
 const getCargos = async () => {
-    const urlCargos = 'http://127.0.0.1:8000/api/cargos/datos'
     try {
-        axios.get(urlCargos)
-            .then(function (response) {
-                cargos.value = response.data.result
-
-            })
+        const response = await api.get(ENDPOINTS.CARGOS_DATOS);
+        cargos.value = response.data.result;
     } catch (error) {
-        console.error('Error al obtener cargos:', error)
-        cargos.value = []
+        console.error('Error al obtener cargos:', error);
+        cargos.value = [];
+        ElMessage.error('Error al cargar cargos');
     }
-}
+};
 
 const getProgramas = async () => {
-    const urlProgramas = 'http://127.0.0.1:8000/api/programa/datos'
     try {
-        axios.get(urlProgramas)
-            .then(function (response) {
-                programas.value = response.data.result
-
-            })
+        const response = await api.get(ENDPOINTS.PROGRAMAS_DATOS);
+        programas.value = response.data.result;
     } catch (error) {
-        console.error('Error al obtener programas:', error)
-        programas.value = []
+        console.error('Error al obtener programas:', error);
+        programas.value = [];
+        ElMessage.error('Error al cargar programas');
     }
-}
+};
 
 const getCentroCosto = async () => {
-    const urlCentroCosto = 'http://127.0.0.1:8000/api/centro_costo/datos'
     try {
-        axios.get(urlCentroCosto)
-            .then(function (response) {
-                centro_costo.value = response.data.result
-
-            })
+        const response = await api.get(ENDPOINTS.CENTRO_COSTO_DATOS);
+        centro_costo.value = response.data.result;
     } catch (error) {
-        console.error('Error al obtener centro de costo:', error)
-        centro_costo.value = []
+        console.error('Error al obtener centro de costo:', error);
+        centro_costo.value = [];
+        ElMessage.error('Error al cargar centro de costo');
     }
-}
+};
+
+// === Manejadores de cambios en selectores ===
 
 const handlePaisChange = async (nuevoPaisId: number | string) => {
     if (!nuevoPaisId) {
@@ -254,7 +248,7 @@ const handlePaisChange = async (nuevoPaisId: number | string) => {
     await getDepartamento(Number(nuevoPaisId));
     departamentoSeleccionado.value = null;
     ciudades.value = [];
-}
+};
 
 const handleDepartamentoChange = async (nuevoDepartamentoId: number | string) => {
     if (!nuevoDepartamentoId) {
@@ -263,130 +257,77 @@ const handleDepartamentoChange = async (nuevoDepartamentoId: number | string) =>
     }
     departamentoSeleccionado.value = Number(nuevoDepartamentoId);
     await getCiudad(Number(nuevoDepartamentoId));
-}
+};
 
-//Guardar datos del colaborador
+// === Guardar colaborador ===
+
 const guardarColaborador = async () => {
     loadingForm.value = true;
     try {
-        // Verifica que el formulario existe
         if (!refForm.value) {
             ElMessage.error('Error: Formulario no inicializado');
-            loadingForm.value = false;
             return;
         }
 
-        // Espera a que el DOM se actualice antes de validar
         await nextTick();
-
-        // Validar el formulario antes de enviar
         const validacion = await refForm.value.validarForm();
         if (!validacion) {
             ElMessage.warning('Por favor, complete todos los campos requeridos');
             return;
         }
 
-        // Formatear la fecha
         const fechaNacimiento = formatearFecha(refForm.value.form.date);
         if (!fechaNacimiento) {
             ElMessage.error('La fecha de nacimiento no es válida');
             return;
         }
 
-        // Crear el objeto con exactamente la misma estructura que en Postman
         const formData = {
             nombres: refForm.value.form.nombres,
             apellidos: refForm.value.form.apellidos,
-            tipo_documento_id: Number(refForm.value.form.tipoDocumento), // Convertir a número
+            tipo_documento_id: Number(refForm.value.form.tipoDocumento),
             numero_documento: refForm.value.form.numeroDocumento,
             fecha_nacimiento: fechaNacimiento,
-            ciudad_nacimiento_id: Number(refForm.value.form.ciudad), // Convertir a número
-            ciudad_residencia_id: Number(refForm.value.form.ciudadResidencia), // Convertir a número
+            ciudad_nacimiento_id: Number(refForm.value.form.ciudad),
+            ciudad_residencia_id: Number(refForm.value.form.ciudadResidencia),
             direccion: refForm.value.form.direccion,
-            telefono_fijo: refForm.value.form.telefonoFijo || null, // Opcional
+            telefono_fijo: refForm.value.form.telefonoFijo || null,
             celular: refForm.value.form.celular,
             email: refForm.value.form.email,
-            id_cargos: Number(refForm.value.form.cargo), // Convertir a número
-            id_programas: Number(refForm.value.form.programa), // Convertir a número
-            id_centro_costo: Number(refForm.value.form.centro_costo) // Convertir a número
+            id_cargos: Number(refForm.value.form.cargo),
+            id_programas: Number(refForm.value.form.programa),
+            id_centro_costo: Number(refForm.value.form.centro_costo)
         };
 
-        // Validar que todos los campos requeridos tengan valor y sean del tipo correcto
-        const camposRequeridos = {
-            nombres: 'string',
-            apellidos: 'string',
-            tipo_documento_id: 'number',
-            numero_documento: 'string',
-            fecha_nacimiento: 'string',
-            ciudad_nacimiento_id: 'number',
-            ciudad_residencia_id: 'number',
-            direccion: 'string',
-            celular: 'string',
-            email: 'string',
-            id_cargos: 'number',
-            id_programas: 'number',
-            id_centro_costo: 'number'
-        };
+        const response = await api.post(ENDPOINTS.COLABORADOR_GUARDAR, formData);
 
-        for (const [campo, tipo] of Object.entries(camposRequeridos)) {
-            if (!formData[campo]) {
-                ElMessage.error(`El campo ${campo} es requerido`);
-                return;
-            }
-            if (typeof formData[campo] !== tipo) {
-                ElMessage.error(`El campo ${campo} debe ser de tipo ${tipo}`);
-                return;
-            }
-        }
-
-
-
-        const response = await axios.post('http://127.0.0.1:8000/api/colaborador/guardar', formData);
-
-        // Verificar la respuesta del servidor
-        if (response.data && (response.data.status === 'success' || response.status === 200 || response.data.message.includes('exitosamente'))) {
-            ElMessage({
-                message: 'Colaborador guardado exitosamente',
-                type: 'success',
-                duration: 3000
-            });
-
-            // Limpiar el formulario
+        if (response.data && (response.data.status === 'success' || response.status === 200)) {
+            ElMessage.success('Colaborador guardado exitosamente');
             limpiarFormulario();
-
-            // Actualizar la lista de colaboradores
             await obtenerColaboradores();
-
-            // Cerrar el formulario
             mostrarFormulario.value = false;
             editandoFormulario.value = false;
         } else {
             throw new Error(response.data.message || 'Error al guardar el colaborador');
         }
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error al guardar colaborador:', error);
-        ElMessage({
-            message: error.response?.data?.message || error.message || 'Error al guardar el colaborador',
-            type: 'error',
-            duration: 5000
-        });
+        ElMessage.error(error.response?.data?.message || error.message || 'Error al guardar el colaborador');
     } finally {
         loadingForm.value = false;
     }
 };
 
+// === Obtener colaboradores ===
+
 const obtenerColaboradores = async () => {
     loadingTable.value = true;
     try {
-        const urlColaboradores = 'http://127.0.0.1:8000/api/colaborador/datos'
-        const response = await axios.get(urlColaboradores);
-
+        const response = await api.get(ENDPOINTS.COLABORADOR_DATOS);
         const datos = response.data.result || response.data;
-        if (!datos) {
-            throw new Error('No hay datos disponibles');
-        }
+        if (!datos) throw new Error('No hay datos disponibles');
 
-        colaboradores.value = datos.map(col => ({
+        colaboradores.value = datos.map((col: any) => ({
             id: col.id,
             nombre_completo: `${col.nombres} ${col.apellidos}`,
             numero_documento: col.identificacion?.numero_documento,
@@ -395,63 +336,44 @@ const obtenerColaboradores = async () => {
             email: col.email
         }));
 
-        // Limpiar el formulario y los selectores en cascada
         if (refForm.value) {
-            // Resetear formulario base
             refForm.value.resetForm();
-
-            // Limpiar selectores en cascada
             handlePaisChange('');
             handleDepartamentoChange('');
-
-            // Forzar la limpieza de los campos problemáticos
             refForm.value.form.pais = '';
             refForm.value.form.departamento = '';
             refForm.value.form.ciudad = '';
             refForm.value.form.ciudadResidencia = '';
             refForm.value.form.direccion = '';
             refForm.value.form.telefonoFijo = '';
-
-            // Limpiar las referencias de datos
             departamentos.value = [];
             ciudades.value = [];
         }
 
         mostrarFormulario.value = false;
         editandoFormulario.value = false;
-
-    } catch (error) {
-        console.error('Error detallado:', error);
-        ElMessage({
-            message: 'Error al cargar los colaboradores: ' + (error.response?.data?.message || error.message),
-            type: 'error',
-            duration: 5000
-        });
+    } catch (error: any) {
+        console.error('Error al cargar colaboradores:', error);
+        ElMessage.error('Error al cargar los colaboradores: ' + (error.response?.data?.message || error.message));
     } finally {
         loadingTable.value = false;
     }
-}
+};
+
+// === Obtener colaborador por ID ===
 
 const getColaboradorById = async (id: number) => {
     loadingForm.value = true;
     try {
-        const urlColaboradorById = `http://127.0.0.1:8000/api/colaborador/dataById/${id}`
-        const response = await axios.get(urlColaboradorById);
+        const response = await api.get(ENDPOINTS.COLABORADOR_DATABYID(id));
         const data = response.data;
 
-        // Obtener el ID del departamento
         const departamentoId = data.ciudad_nacimiento?.id_departamentos;
-
-        // Cargar todos los departamentos
-        const urlTodosDepartamentos = 'http://127.0.0.1:8000/api/departamento/datos';
-        const responseTodos = await axios.get(urlTodosDepartamentos);
+        const responseTodos = await api.get(ENDPOINTS.DEPARTAMENTO_DATOS);
         const todosLosDepartamentos = responseTodos.data.result || responseTodos.data;
-
-        // Buscar el departamento y su país
-        const depEncontrado = todosLosDepartamentos.find(d => Number(d.id) === Number(departamentoId));
+        const depEncontrado = todosLosDepartamentos.find((d: any) => Number(d.id) === Number(departamentoId));
         const paisId = depEncontrado?.id_pais;
 
-        // Cargar datos en cascada
         if (paisId) {
             await getDepartamento(paisId);
             await getCiudad(departamentoId);
@@ -477,54 +399,44 @@ const getColaboradorById = async (id: number) => {
             centro_costo: data.id_centro_costo
         };
 
-        // Actualizar las referencias reactivas
         paisSeleccionado.value = paisId;
         departamentoSeleccionado.value = departamentoId;
 
-        // Establecer los datos en el formulario
         await nextTick();
         if (refForm.value) {
             refForm.value.setFormData(formData);
         }
-
     } catch (error) {
-        console.error('Error completo:', error);
+        console.error('Error al cargar colaborador:', error);
         ElMessage.error('Error al cargar los datos del colaborador');
     } finally {
         loadingForm.value = false;
     }
-}
+};
+
+// === Actualizar colaborador ===
 
 const actualizarColaborador = async () => {
     loadingForm.value = true;
     try {
-        if (!refForm.value) {
-            ElMessage.error('Error: Formulario no inicializado');
-            return;
-        }
-
-        const formData = refForm.value.form;
-
-        if (!formData || !formData.id) {
+        if (!refForm.value?.form?.id) {
             ElMessage.error('Error: Datos del formulario incompletos');
             return;
         }
 
-        // Formatear la fecha correctamente
-        const formatearFecha = (fecha) => {
+        const formData = refForm.value.form;
+        const formatearFecha = (fecha: any) => {
             if (!fecha) return null;
             const date = new Date(fecha);
-            return date.toISOString().split('T')[0]; // Retorna YYYY-MM-DD
+            return isNaN(date.getTime()) ? null : date.toISOString().split('T')[0];
         };
-
-        const urlActualizar = `http://127.0.0.1:8000/api/colaborador/actualizar/${formData.id}`;
 
         const datosActualizados = {
             nombres: formData.nombres,
             apellidos: formData.apellidos,
             tipo_documento_id: Number(formData.tipoDocumento),
             numero_documento: formData.numeroDocumento,
-            fecha_nacimiento: formatearFecha(formData.date), // Formatear la fecha
+            fecha_nacimiento: formatearFecha(formData.date),
             ciudad_nacimiento_id: Number(formData.ciudad),
             ciudad_residencia_id: Number(formData.ciudadResidencia),
             direccion: formData.direccion,
@@ -536,30 +448,28 @@ const actualizarColaborador = async () => {
             id_centro_costo: Number(formData.centro_costo)
         };
 
-        const response = await axios.put(urlActualizar, datosActualizados);
-
-        if (response.data) {
-            ElMessage.success('Colaborador actualizado exitosamente');
-            await obtenerColaboradores();
-            mostrarFormulario.value = false;
-            editandoFormulario.value = false;
-        }
-    } catch (error) {
+        const response = await api.put(ENDPOINTS.COLABORADOR_ACTUALIZAR(formData.id), datosActualizados);
+        ElMessage.success('Colaborador actualizado exitosamente');
+        await obtenerColaboradores();
+        mostrarFormulario.value = false;
+        editandoFormulario.value = false;
+    } catch (error: any) {
         console.error('Error al actualizar:', error);
         if (error.response?.status === 422) {
-            console.log('Errores de validación:', error.response.data.errors);
             ElMessage.error('Error de validación en los datos');
         } else {
-            ElMessage.error('Error al actualizar el colaborador');
+            ElMessage.error(error.response?.data?.message || 'Error al actualizar el colaborador');
         }
     } finally {
         loadingForm.value = false;
     }
 };
 
+// === Eliminar colaborador ===
+
 const eliminarColaborador = async (id: number) => {
     try {
-        const result = await ElMessageBox.confirm(
+        await ElMessageBox.confirm(
             "¿Estás seguro de querer eliminar este colaborador?",
             "Confirmación",
             {
@@ -569,60 +479,46 @@ const eliminarColaborador = async (id: number) => {
             }
         );
 
-        if (result) {
-            const urlEliminar = `http://127.0.0.1:8000/api/colaborador/borrar/${id}`;
-            const response = await axios.delete(urlEliminar);
-
-            if (response.data && response.data.message) {
-                await obtenerColaboradores();
-                ElMessage({
-                    type: "success",
-                    message: response.data.message,
-                });
-            }
+        const response = await api.delete(ENDPOINTS.COLABORADOR_BORRAR(id));
+        ElMessage.success(response.data.message || 'Colaborador eliminado');
+        await obtenerColaboradores();
+    } catch (error: any) {
+        if (error !== 'cancel') {
+            console.error('Error al eliminar:', error);
+            ElMessage.error(error.response?.data?.message || "Error al eliminar el colaborador");
         }
-    } catch (error) {
-        console.error('Error al eliminar:', error);
-        ElMessage({
-            type: "error",
-            message: error.response?.data?.message || "Error al eliminar el colaborador",
-        });
     }
 };
 
-
+// === Funciones auxiliares ===
 
 const limpiarFormulario = () => {
-    if (refForm.value) {
-        refForm.value.limpiarFormulario();
-    }
+    if (refForm.value) refForm.value.limpiarFormulario();
     mostrarFormulario.value = false;
     editandoFormulario.value = false;
-}
+};
 
 const formatearFecha = (fecha: string | Date): string | null => {
     if (!fecha) return null;
     try {
         const date = new Date(fecha);
-        if (isNaN(date.getTime())) return null;
-        return date.toISOString().split('T')[0];
+        return isNaN(date.getTime()) ? null : date.toISOString().split('T')[0];
     } catch {
         return null;
     }
 };
 
+// === Inicialización ===
+
 onMounted(() => {
-    getPais()
-    getTipoDocumento()
-    getCiudadResidencia()
-    getCargos()
-    getProgramas()
-    getCentroCosto()
-    obtenerColaboradores()
-})
-
-
-
+    getPais();
+    getTipoDocumento();
+    getCiudadResidencia();
+    getCargos();
+    getProgramas();
+    getCentroCosto();
+    obtenerColaboradores();
+});
 </script>
 
 

@@ -75,8 +75,8 @@ import formAutoevaluacion from './components/formAutoevaluacion.vue';
 import { Delete, Edit } from "@element-plus/icons-vue"
 import Formulario from '../../components/Formulario.vue';
 import { ref, onMounted, computed } from 'vue';
-import axios from 'axios';
 import { ElMessage } from 'element-plus';
+import { api, ENDPOINTS } from '../../config/api';
 
 const mostrarFormulario = ref(false)
 const editandoFormulario = ref(false)
@@ -139,8 +139,12 @@ interface DetalleEvaluacion {
 const obtenerCriterios = async () => {
     loadingTable.value = true;
     try {
-        const response = await axios.get('http://127.0.0.1:8000/api/categorias/datos');
-        criterios.value = response.data.result;
+        const response = await api.get(ENDPOINTS.CATEGORIAS_DATOS);
+        // Ordenar criterios por id ascendente para asegurar que el índice corresponda al nivel
+        criterios.value = response.data.result.map((categoria: any) => ({
+            ...categoria,
+            criterios: categoria.criterios.sort((a: any, b: any) => a.id - b.id)
+        }));
     } catch (error) {
         console.error("Error al obtener criterios:", error);
         ElMessage.error("Error al cargar los criterios");
@@ -161,7 +165,7 @@ const guardarEvaluacion = async () => {
 
 const obtenerEvaluaciones = async () => {
     try {
-        const response = await axios.get('http://127.0.0.1:8000/api/evaluacion/datos');
+        const response = await api.get(ENDPOINTS.EVALUACION_DATOS);
         evaluaciones.value = response.data.result;
     } catch (error) {
         ElMessage.error('Error al cargar las evaluaciones');
@@ -177,9 +181,17 @@ const formatDateTime = (date: string) => {
 };
 
 const calcularPromedio = (detalles: any[]) => {
+    console.log('Detalles para calcular promedio:', detalles);
     if (!detalles?.length) return 0;
-    const suma = detalles.reduce((acc, det) => acc + det.valoracion, 0);
-    return (suma / detalles.length).toFixed(2);
+    const suma = detalles.reduce((acc, det) => {
+        const valor = Number(det.valoracion);
+        console.log('Valoracion de detalle:', det.valoracion, 'Convertido a number:', valor);
+        return acc + valor;
+    }, 0);
+    console.log('Suma total:', suma, 'Cantidad:', detalles.length);
+    const promedio = (suma / detalles.length).toFixed(2);
+    console.log('Promedio calculado:', promedio);
+    return promedio;
 };
 
 const verDetalles = (row: any) => {
