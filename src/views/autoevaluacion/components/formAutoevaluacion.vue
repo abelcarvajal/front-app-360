@@ -22,35 +22,35 @@
             <el-form :model="form" :rules="rules" ref="formRef" label-position="top">
                 <div class="content-wrapper">
                     <el-collapse v-model="activeName" accordion>
-                        <el-collapse-item 
-                            v-for="categoria in criterios" 
-                            :key="categoria.id"
-                            :title="categoria.categoria"
-                            :name="categoria.id.toString()"
-                            :class="{ 'evaluado': respuestas[categoria.id] }"
+                        <el-collapse-item
+                            v-for="item in criterios"
+                            :key="item.id"
+                            :title="item.nombre"
+                            :name="item.id.toString()"
+                            :class="{ 'evaluado': respuestas[item.id] }"
                         >
-                            <!-- Descripción de la categoría -->
+                            <!-- Descripción del ítem -->
                             <div class="categoria-descripcion">
                                 <h4>Descripción:</h4>
-                                <p>{{ categoria.descripcion }}</p>
+                                <p>{{ item.descripcion }}</p>
                             </div>
-                            
+
                             <!-- Área de evaluación -->
                             <div class="evaluacion-container">
-                                <el-radio-group 
-                                    v-model="respuestas[categoria.id]" 
+                                <el-radio-group
+                                    v-model="respuestas[item.id]"
                                     class="criterio-opciones"
                                     @change="handleRadioChange"
                                 >
-                                    <el-radio 
-                                        v-for="criterio in categoria.criterios" 
-                                        :key="criterio.id"
-                                        :value="criterio.id"
+                                    <el-radio
+                                        v-for="nivel in item.niveles"
+                                        :key="nivel.nivel"
+                                        :value="nivel.nivel"
                                         class="criterio-radio"
                                     >
                                         <div class="radio-content">
-                                            <span class="radio-value">{{ getCriterioNivel(criterio) }}</span>
-                                            <p class="criterio-texto">{{ criterio.criterio }}</p>
+                                            <span class="radio-value">{{ nivel.nivel }}</span>
+                                            <p class="criterio-texto">{{ nivel.descripcion }}</p>
                                         </div>
                                     </el-radio>
                                 </el-radio-group>
@@ -81,17 +81,17 @@ import api, {ENDPOINTS} from '../../../config/api'
 
 const emit = defineEmits(['evaluacionGuardada']);
 
-interface Criterio {
-    id: number;
-    criterio: string;
-    id_categorias_criterios: number;
+interface Nivel {
+    nivel: number;
+    descripcion: string;
 }
 
-interface Categoria {
+interface Item {
     id: number;
-    categoria: string;
+    nombre: string;
     descripcion: string;
-    criterios: Criterio[];
+    id_categorias_criterios: number;
+    niveles: Nivel[];
 }
 
 interface TipoEvaluacion {
@@ -101,7 +101,7 @@ interface TipoEvaluacion {
 
 const props = defineProps({
     criterios: {
-        type: Array as PropType<Categoria[]>,
+        type: Array as PropType<Item[]>,
         required: true,
         default: () => []
     },
@@ -122,27 +122,7 @@ const tipoEvaluacionSeleccionado = computed(() =>
     tiposEvaluacion.value?.find(tipo => tipo.id === tipoEvaluacionId.value)
 );
 
-// Función para obtener el nivel del criterio (1-5)
-const getCriterioNivel = (criterio: any) => {
-    // Asumiendo que los criterios vienen ordenados del 1 al 5
-    const categoria = props.criterios.find(cat =>
-        cat.criterios.some(c => c.id === criterio.id)
-    );
-    const index = categoria?.criterios.findIndex(c => c.id === criterio.id);
-    console.log('Criterio:', criterio, 'Categoria encontrada:', categoria, 'Index:', index, 'Nivel calculado:', index !== undefined ? index + 1 : '');
-    return index !== undefined ? index + 1 : '';
-};
-
-const handleRadioChange = (value: number) => {
-    const categoriaId = activeName.value;
-    respuestas.value[categoriaId] = value;
-    
-    console.log('Respuesta guardada:', {
-        categoriaId,
-        criterioId: value,
-        respuestas: respuestas.value
-    });
-
+const handleRadioChange = () => {
     setTimeout(() => {
         activeName.value = '';
     }, 300);
@@ -195,14 +175,13 @@ const guardarEvaluacion = async () => {
         const evaluacionId = evaluacionResponse.data.result.id;
 
         // Guardar detalles
-        for (const [categoriaId, criterioId] of Object.entries(respuestas.value)) {
+        for (const [itemId, nivelSeleccionado] of Object.entries(respuestas.value)) {
             const detalleData = {
-                valoracion: getCriterioNivel({ id: criterioId }),
-                id_criterio: criterioId,
+                valoracion: nivelSeleccionado,
+                id_criterio: Number(itemId),
                 id_evaluacion: evaluacionId
             };
 
-            console.log('Guardando detalle:', detalleData);
             await api.post(ENDPOINTS.DETALLE_GUARDAR, detalleData);
         }
 

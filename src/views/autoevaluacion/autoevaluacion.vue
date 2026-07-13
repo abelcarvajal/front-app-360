@@ -54,10 +54,10 @@
 
             <el-dialog v-model="mostrarDetalles" title="Detalles de la Evaluación" width="70%">
                 <el-descriptions :column="1" border>
-                    <el-descriptions-item 
-                        v-for="detalle in detallesSeleccionados" 
+                    <el-descriptions-item
+                        v-for="detalle in detallesSeleccionados"
                         :key="detalle.id"
-                        :label="detalle.criterio?.criterio || 'Sin criterio'"
+                        :label="detalle.item?.nombre || 'Sin ítem'"
                     >
                         {{ detalle.valoracion }}
                     </el-descriptions-item>
@@ -115,25 +115,10 @@ const tableData = [
     },
 ];
 
-interface CriterioMapped extends CategoriaResponse {
-    [key: string]: any;
-}
-
-interface CategoriaResponse {
-    id?: number;
-    categoria?: string;
-    descripcion_categoria?: string;
-    criterios?: Array<{
-        id: number;
-        nombre: string;
-        descripcion: string;
-    }>;
-}
-
 interface DetalleEvaluacion {
     id: number;
-    criterio: {
-        criterio: string;
+    item: {
+        nombre: string;
     };
     valoracion: number;
 }
@@ -142,11 +127,8 @@ const obtenerCriterios = async () => {
     loadingTable.value = true;
     try {
         const response = await api.get(ENDPOINTS.CATEGORIAS_DATOS);
-        // Ordenar criterios por id ascendente para asegurar que el índice corresponda al nivel
-        criterios.value = response.data.result.map((categoria: any) => ({
-            ...categoria,
-            criterios: categoria.criterios.sort((a: any, b: any) => a.id - b.id)
-        }));
+        // Lista plana de ítems: hoy solo existe una categoría, no se agrupa visualmente
+        criterios.value = response.data.result.flatMap((categoria: any) => categoria.items ?? []);
     } catch (error) {
         console.error("Error al obtener criterios:", error);
         ElMessage.error("Error al cargar los criterios");
@@ -183,23 +165,14 @@ const formatDateTime = (date: string) => {
 };
 
 const calcularPromedio = (detalles: any[]) => {
-    console.log('Detalles para calcular promedio:', detalles);
     if (!detalles?.length) return 0;
-    const suma = detalles.reduce((acc, det) => {
-        const valor = Number(det.valoracion);
-        console.log('Valoracion de detalle:', det.valoracion, 'Convertido a number:', valor);
-        return acc + valor;
-    }, 0);
-    console.log('Suma total:', suma, 'Cantidad:', detalles.length);
-    const promedio = (suma / detalles.length).toFixed(2);
-    console.log('Promedio calculado:', promedio);
-    return promedio;
+    const suma = detalles.reduce((acc, det) => acc + Number(det.valoracion), 0);
+    return (suma / detalles.length).toFixed(2);
 };
 
 const verDetalles = (row: any) => {
     detallesSeleccionados.value = row.detalle_evaluacion || [];
     mostrarDetalles.value = true;
-    console.log('Detalles de la fila:', row.detalle_evaluacion);   
 };
 
 onMounted(() => {
