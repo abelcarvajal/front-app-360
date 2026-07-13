@@ -77,7 +77,7 @@
 <script lang="ts" setup>
 import { ref, computed, PropType, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import {api, ENDPOINTS} from '../../../config/api'
+import api, {ENDPOINTS} from '../../../config/api'
 
 const emit = defineEmits(['evaluacionGuardada']);
 

@@ -56,7 +56,7 @@ import { Delete, Edit } from "@element-plus/icons-vue";
 import { ElMessage, ElMessageBox } from 'element-plus';
 import Formulario from '../../components/Formulario.vue';
 import { ref, onMounted, nextTick } from 'vue';
-import { api, ENDPOINTS } from '../../config/api'; // ✅ Solo api y ENDPOINTS
+import api, { ENDPOINTS } from '../../config/api'; // ✅ Solo api y ENDPOINTS
 
 const svg = `
     <path class="path" d="

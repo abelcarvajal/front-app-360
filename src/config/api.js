@@ -1,22 +1,47 @@
 // src/config/api.js
 import axios from 'axios';
 
-// 🔧 URL base de API Laravel
-// 👉 Cámbiarla en producción cuando despliegue (ej: 'https://tuapp.com/api')
-const API_BASE_URL = 'http://127.0.0.1:8000/api';
+// URL base de API Laravel
+// Cámbiarla en producción cuando despliegue (ej: 'https://tuapp.com/api')
 
-// 🌐 Cliente HTTP reutilizable
-export const api = axios.create({
-  baseURL: API_BASE_URL,
-  timeout: 15000, // 15 segundos de tiempo máximo por petición
+const api = axios.create({
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000/api',
   headers: {
     'Content-Type': 'application/json',
-    // Si usas autenticación más adelante, puedes añadir tokens aquí
-  },
+    'Accept': 'application/json',
+  }
 });
 
-// 📍 Endpoints de la API (solo rutas relativas)
+// Interceptor para agregar el token de autenticación a cada solicitud
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// Interceptor: maneja 401 globalmente (token inválido o expirado)
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
+// Endpoints de la API (solo rutas relativas)
 export const ENDPOINTS = {
+
+  // === Autenticación ===
+  AUTH_LOGIN: '/auth/login',
+  AUTH_LOGOUT: '/auth/logout',
+  AUTH_ME: '/auth/me',
+  AUTH_CAMBIAR_PASSWORD: '/auth/cambiar-password',
+
   // === Tipos de evaluación ===
   TIPOS_DATOS: '/tipos/datos',
 
@@ -48,4 +73,6 @@ export const ENDPOINTS = {
     PROGRAMAS_DATOS: '/programa/datos',
     COLABORADOR_ACTUALIZAR: (id) => `/colaborador/actualizar/${id}`,
     COLABORADOR_BORRAR: (id) => `/colaborador/borrar/${id}`,
-};
+}
+
+export default api;

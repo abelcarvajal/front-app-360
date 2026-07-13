@@ -76,19 +76,21 @@ import { Delete, Edit } from "@element-plus/icons-vue"
 import Formulario from '../../components/Formulario.vue';
 import { ref, onMounted, computed } from 'vue';
 import { ElMessage } from 'element-plus';
-import { api, ENDPOINTS } from '../../config/api';
+import api, { ENDPOINTS } from '../../config/api';
+import { useAuthStore } from '@/stores/auth';
 
+const authStore = useAuthStore();
 const mostrarFormulario = ref(false)
 const editandoFormulario = ref(false)
 const refForm = ref();
 const criterios = ref([]);
 const dataCriterio = ref();
 const loadingTable = ref(false);
-const colaboradorActual = ref(1);
 const formAutoevaluacionRef = ref();
 const evaluaciones = ref([]);
 const mostrarDetalles = ref(false);
 const detallesSeleccionados = ref<DetalleEvaluacion[]>([]);
+const colaboradorActual = computed(() => authStore.user?.colaborador_id);
 
 const abrirFormulario = () => {
     mostrarFormulario.value = true
