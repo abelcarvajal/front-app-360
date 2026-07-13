@@ -88,7 +88,7 @@ import LayoutMain from "../../components/LayoutMain.vue";
 import Header from "../../components/Header.vue";
 import formCriterios from "./components/formCriterios.vue";
 import { Delete, Edit, Plus } from "@element-plus/icons-vue";
-import { ref, onMounted } from "vue";
+import { ref, onMounted, nextTick } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import type { FormInstance, FormRules } from "element-plus";
 import api, { ENDPOINTS } from "@/config/api";
@@ -222,15 +222,17 @@ const drawerItemVisible = ref(false);
 const editandoItem = ref(false);
 const refFormItem = ref();
 
-const abrirNuevoItem = (categoriaRow: Categoria) => {
+const abrirNuevoItem = async (categoriaRow: Categoria) => {
     editandoItem.value = false;
     drawerItemVisible.value = true;
+    await nextTick();
     refFormItem.value?.cargarDatos({ id_categorias_criterios: categoriaRow.id });
 };
 
-const editarItem = (_categoriaRow: Categoria, itemRow: Item) => {
+const editarItem = async (_categoriaRow: Categoria, itemRow: Item) => {
     editandoItem.value = true;
     drawerItemVisible.value = true;
+    await nextTick();
     refFormItem.value?.cargarDatos(itemRow);
 };
 
