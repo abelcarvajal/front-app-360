@@ -1,49 +1,84 @@
 <template>
     <LayoutMain>
         <template #slotLayout>
-            <Header :title="'Criterios'" :titleButton="'Nuevo Criterio'" :abrir="abrirFormulario" />
+            <Header :title="'Criterios'" :titleButton="'Nueva categoría'" :abrir="abrirNuevaCategoria" />
 
-            <Formulario titulo="Gestion de criterios de evaluación" v-model:is-open="mostrarFormulario"
-                :is-edit="editandoFormulario" @save="guardarDatos" @update="actualizarCriterio"
-                @cancel="obtenerCriterios">
-                <template #slotForm>
-                    <el-col :xs="24" :sm="24" :md="24" :lg="24" :xl="24">
-                        <formCriterios
-                        v-model:is-open="mostrarFormulario"
-                        ref="refForm"
-                        data-value="dataCriterio" 
-                        :loading="loadingForm"
-                        :element-loading-spinner="svg"
-                        element-loading-svg-view-box="-10, -10, 50, 50"
-                        element-loading-background="rgba(122, 122, 122, 0.8)"
-                        />
-                    </el-col>
-                </template>
-            </Formulario>
+            <el-table v-loading="loadingTable" element-loading-text="Cargando..." :data="categorias" row-key="id">
+                <el-table-column type="expand">
+                    <template #default="{ row: categoriaRow }">
+                        <div class="items-panel">
+                            <div class="items-panel__header">
+                                <span class="items-panel__titulo">Ítems de evaluación</span>
+                                <el-button type="primary" size="small" :icon="Plus"
+                                    @click="abrirNuevoItem(categoriaRow)">
+                                    Nuevo ítem
+                                </el-button>
+                            </div>
 
-            <el-table 
-            v-loading="loadingTable"
-            element-loading-text="Loading..."
-            :element-loading-spinner="svg"
-            element-loading-svg-view-box="-10, -10, 50, 50"
-            element-loading-background="rgba(122, 122, 122, 0.8)"
-            :data="criterios">
-                <el-table-column fixed prop="categoria" label="Categoría Criterio" width="150" />
-                <el-table-column prop="descripcion" label="Descripción" width="200" />
-                <el-table-column prop="criterio1" label="Criterio 1" width="200" />
-                <el-table-column prop="criterio2" label="Criterio 2" width="200" />
-                <el-table-column prop="criterio3" label="Criterio 3" width="200" />
-                <el-table-column prop="criterio4" label="Criterio 4" width="200" />
-                <el-table-column prop="criterio5" label="Criterio 5" width="200" />
-                <el-table-column fixed="right" label="Opciones" min-width="150">
-                    <template #default="scope">
-                        <el-button plain type="primary" :icon="Edit"
-                            @click="editarFormulario(scope.row.id)"></el-button>
-                        <el-button plain type="danger" :icon="Delete"
-                            @click="eliminarCriterio(scope.row.id)"></el-button>
+                            <el-table v-if="categoriaRow.items?.length" :data="categoriaRow.items" size="small">
+                                <el-table-column prop="nombre" label="Nombre" min-width="180" />
+                                <el-table-column prop="descripcion" label="Descripción" min-width="260" />
+                                <el-table-column label="Estado" width="140">
+                                    <template #default="{ row: itemRow }">
+                                        <el-switch v-model="itemRow.activo" active-text="Activo"
+                                            inactive-text="Inactivo"
+                                            @change="(valor) => cambiarEstadoItem(itemRow, valor as boolean)" />
+                                    </template>
+                                </el-table-column>
+                                <el-table-column fixed="right" label="Opciones" width="90">
+                                    <template #default="{ row: itemRow }">
+                                        <el-button plain type="primary" :icon="Edit"
+                                            @click="editarItem(categoriaRow, itemRow)"></el-button>
+                                    </template>
+                                </el-table-column>
+                            </el-table>
+
+                            <el-empty v-else description="Esta categoría todavía no tiene ítems" :image-size="60" />
+                        </div>
+                    </template>
+                </el-table-column>
+
+                <el-table-column prop="categoria" label="Categoría" min-width="200" />
+                <el-table-column prop="descripcion" label="Descripción" min-width="280" />
+                <el-table-column label="Ítems" width="90">
+                    <template #default="{ row }">{{ row.items?.length || 0 }}</template>
+                </el-table-column>
+                <el-table-column fixed="right" label="Opciones" width="150">
+                    <template #default="{ row }">
+                        <el-button plain type="primary" :icon="Edit" @click="editarCategoria(row)"></el-button>
+                        <el-button plain type="danger" :icon="Delete" @click="eliminarCategoria(row.id)"></el-button>
                     </template>
                 </el-table-column>
             </el-table>
+
+            <el-dialog v-model="dialogCategoriaVisible"
+                :title="editandoCategoria ? 'Editar categoría' : 'Nueva categoría'" width="500px">
+                <el-form :model="categoriaForm" :rules="categoriaRules" ref="categoriaFormRef" label-position="top">
+                    <el-form-item label="Categoría" prop="categoria">
+                        <el-input v-model="categoriaForm.categoria" placeholder="Ej: Competencias Generales" />
+                    </el-form-item>
+                    <el-form-item label="Descripción" prop="descripcion">
+                        <el-input v-model="categoriaForm.descripcion" type="textarea" autosize
+                            placeholder="Descripción de la categoría" />
+                    </el-form-item>
+                </el-form>
+                <template #footer>
+                    <el-button @click="dialogCategoriaVisible = false">Cancelar</el-button>
+                    <el-button type="primary" :loading="loadingCategoriaForm" @click="guardarCategoria">
+                        {{ editandoCategoria ? 'Actualizar' : 'Guardar' }}
+                    </el-button>
+                </template>
+            </el-dialog>
+
+            <el-drawer v-model="drawerItemVisible" :title="editandoItem ? 'Editar ítem' : 'Nuevo ítem'" size="480px">
+                <formCriterios ref="refFormItem" :loading="loadingItemForm" />
+                <template #footer>
+                    <el-button @click="drawerItemVisible = false">Cancelar</el-button>
+                    <el-button type="primary" :loading="loadingItemForm" @click="guardarItem">
+                        {{ editandoItem ? 'Actualizar' : 'Guardar' }}
+                    </el-button>
+                </template>
+            </el-drawer>
         </template>
     </LayoutMain>
 </template>
@@ -52,256 +87,219 @@
 import LayoutMain from "../../components/LayoutMain.vue";
 import Header from "../../components/Header.vue";
 import formCriterios from "./components/formCriterios.vue";
-import { Delete, Edit } from "@element-plus/icons-vue";
-import Formulario from "../../components/Formulario.vue";
-import { reactive, ref, onMounted } from "vue";
+import { Delete, Edit, Plus } from "@element-plus/icons-vue";
+import { ref, onMounted } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
-import axios from "axios";
+import type { FormInstance, FormRules } from "element-plus";
+import api, { ENDPOINTS } from "@/config/api";
 
-const loadingTable = ref(false)
-const loadingForm = ref(false)
-const svg = `
-        <path class="path" d="
-        M 30 15
-        L 28 17
-        M 25.61 25.61
-        A 15 15, 0, 0, 1, 15 30
-        A 15 15, 0, 1, 1, 27.99 7.5
-        L 15 15
-        " style="stroke-width: 4px; fill: rgba(0, 0, 0, 0)"/>
-        `
+interface Nivel {
+    nivel: number;
+    descripcion: string;
+}
 
-const mostrarFormulario = ref(false);
-const editandoFormulario = ref(false);
-const refForm = ref();
-const criterios = ref<CriterioMapped[]>([]);
-const dataCriterio = ref();
+interface Item {
+    id: number;
+    nombre: string;
+    descripcion: string;
+    id_categorias_criterios: number;
+    activo: boolean;
+    niveles: Nivel[];
+}
 
-const abrirFormulario = () => {
-    mostrarFormulario.value = true;
-    editandoFormulario.value = false;
-};
+interface Categoria {
+    id: number;
+    categoria: string;
+    descripcion: string;
+    items: Item[];
+}
 
-const editarFormulario = async (row: number) => {
-    loadingForm.value = true;
-    try {
-        await getDataById(row);
-        mostrarFormulario.value = true;
-        editandoFormulario.value = true;
-    } catch (error) {
-        ElMessage.error("Error al editar el criterio");
-    } finally {
-        loadingForm.value = false;
+const loadingTable = ref(false);
+const loadingCategoriaForm = ref(false);
+const loadingItemForm = ref(false);
+const categorias = ref<Categoria[]>([]);
+
+const mostrarError = (error: any, mensajePorDefecto: string) => {
+    const errores = error?.response?.data?.errors;
+    if (errores) {
+        Object.values(errores).flat().forEach((mensaje) => ElMessage.error(String(mensaje)));
+    } else {
+        ElMessage.error(error?.response?.data?.message || mensajePorDefecto);
     }
 };
 
-const guardarDatos = async () => {
-    const validacion = await refForm.value.validarForm();
-
-    if (validacion) {
-        await crearCriterio();
-    }
-};
-
-const crearCriterio = async () => {
-    loadingForm.value = true;
-    try {
-        const urlCatCrit = "http://127.0.0.1:8000/api/categorias/guardar";
-
-        const dataCatCrit = {
-            categoria: refForm.value.form.categoria,
-            descripcion: refForm.value.form.descripcion,
-        };
-
-        for (let i = 1; i <= 5; i++) {
-            dataCatCrit[`criterio${i}`] = refForm.value.form[`criterio${i}`];
-        }
-
-        await axios.post(urlCatCrit, dataCatCrit);
-        refForm.value?.limpiarFormulario();
-        ElMessage.success("Criterio creado correctamente");
-        await obtenerCriterios();
-    } catch (error) {
-        console.error(error);
-        ElMessage.error("Error al crear el criterio");
-    } finally {
-        loadingForm.value = false;
-    }
-};
-
-const getDataById = async (id: number) => {
-    loadingForm.value = true;
-    try {
-        const urlCatCrit = `http://127.0.0.1:8000/api/categorias/dataById/${id}`;
-        const response = await axios.get(urlCatCrit);
-        const data = response.data.result;
-
-        const formData = {
-            id: data.id,
-            categoria: data.categoria,
-            descripcion: data.descripcion,
-        };
-
-        for (let i = 1; i <= 5; i++) {
-            formData[`criterio${i}`] = data.criterios?.[i - 1]?.criterio || "";
-        }
-
-        refForm.value.cargarDatos(formData);
-    } catch (error) {
-        ElMessage.error("Error al cargar los datos del criterio");
-    } finally {
-        loadingForm.value = false;
-    }
-};
-
-const actualizarCriterio = async () => {
-    loadingForm.value = true;
-    try {
-        const validacion = await refForm.value.validarForm();
-        if (!validacion) {
-            return;
-        }
-
-        const urlActualizar = `http://127.0.0.1:8000/api/categorias/actualizar/${refForm.value.form.id}`;
-        const formData = {
-            categoria: refForm.value.form.categoria?.trim(),
-            descripcion: refForm.value.form.descripcion?.trim(),
-            criterio1: refForm.value.form.criterio1?.trim() || "",
-            criterio2: refForm.value.form.criterio2?.trim() || "",
-            criterio3: refForm.value.form.criterio3?.trim() || "",
-            criterio4: refForm.value.form.criterio4?.trim() || "",
-            criterio5: refForm.value.form.criterio5?.trim() || ""
-        };
-
-        console.log('ID:', refForm.value.form.id);
-        console.log('Datos a enviar:', formData);
-
-        const response = await axios.put(urlActualizar, formData);
-        
-        console.log('Respuesta del servidor:', response.data);
-
-        ElMessage.success("Criterio actualizado correctamente");
-        mostrarFormulario.value = false;
-        await obtenerCriterios();
-        limpiarFormulario();
-    } catch (error) {
-        console.error("Error completo:", error);
-        console.error("Respuesta del servidor:", error.response?.data);
-
-        if (error.response?.data?.message) {
-            ElMessage.error(`Error del servidor: ${error.response.data.message}`);
-        } else if (error.response?.data?.errors) {
-            const errorMessages = Object.values(error.response?.data?.errors || {}) as string[];
-            errorMessages.forEach(message => ElMessage.error({ message }));
-        } else {
-            ElMessage.error(`Error al actualizar: ${error.message}`);
-        }
-    } finally {
-        loadingForm.value = false;
-    }
-};
-
-const obtenerCriterios = async () => {
+const obtenerCategorias = async () => {
     loadingTable.value = true;
     try {
-        const urlCatCrit = "http://127.0.0.1:8000/api/categorias/datos";
-        const response = await axios.get<{
-            status: string;
-            message: string;
-            result: CategoriaResponse[];
-        }>(urlCatCrit);
-        
-        const datos = Array.isArray(response.data.result)
-            ? response.data.result
-            : [response.data.result];
-
-        criterios.value = datos.map((item: CategoriaResponse) => {
-            const mappedItem: CriterioMapped = { ...item };
-            for (let i = 0; i < 5; i++) {
-                mappedItem[`criterio${i + 1}`] = item.criterios?.[i]?.criterio || "";
-            }
-            return mappedItem;
-        });
-
-        if (refForm.value) {
-            refForm.value.resetForm();
-        }
-        mostrarFormulario.value = false;
-        editandoFormulario.value = false;
-
+        const response = await api.get(ENDPOINTS.CATEGORIAS_DATOS);
+        categorias.value = response.data.result ?? [];
     } catch (error) {
-        console.error("Error al obtener criterios:", error);
-        ElMessage.error("Error al cargar los criterios");
-        criterios.value = [];
+        ElMessage.error("Error al cargar las categorías");
+        categorias.value = [];
     } finally {
         loadingTable.value = false;
     }
 };
 
-const eliminarCriterio = async (id: number) => {
-    ElMessageBox.confirm(
-        "¿Estás seguro de querer eliminar este criterio?",
-        "Confirmación",
-        {
-            confirmButtonText: "Eliminar",
-            cancelButtonText: "Cancelar",
-            type: "warning",
+// --- Categorías ---
+const dialogCategoriaVisible = ref(false);
+const editandoCategoria = ref(false);
+const categoriaFormRef = ref<FormInstance>();
+const categoriaForm = ref({ id: null as number | null, categoria: '', descripcion: '' });
+
+const categoriaRules: FormRules = {
+    categoria: [{ required: true, message: 'La categoría es requerida', trigger: 'blur' }],
+    descripcion: [{ required: true, message: 'La descripción es requerida', trigger: 'blur' }],
+};
+
+const abrirNuevaCategoria = () => {
+    categoriaForm.value = { id: null, categoria: '', descripcion: '' };
+    categoriaFormRef.value?.clearValidate();
+    editandoCategoria.value = false;
+    dialogCategoriaVisible.value = true;
+};
+
+const editarCategoria = (row: Categoria) => {
+    categoriaForm.value = { id: row.id, categoria: row.categoria, descripcion: row.descripcion };
+    editandoCategoria.value = true;
+    dialogCategoriaVisible.value = true;
+};
+
+const guardarCategoria = async () => {
+    if (!categoriaFormRef.value) return;
+    try {
+        await categoriaFormRef.value.validate();
+    } catch {
+        return;
+    }
+
+    loadingCategoriaForm.value = true;
+    try {
+        const payload = {
+            categoria: categoriaForm.value.categoria.trim(),
+            descripcion: categoriaForm.value.descripcion.trim(),
+        };
+
+        if (editandoCategoria.value && categoriaForm.value.id) {
+            await api.put(ENDPOINTS.CATEGORIA_ACTUALIZAR(categoriaForm.value.id), payload);
+            ElMessage.success("Categoría actualizada correctamente");
+        } else {
+            await api.post(ENDPOINTS.CATEGORIAS_GUARDAR, payload);
+            ElMessage.success("Categoría creada correctamente");
         }
+
+        dialogCategoriaVisible.value = false;
+        await obtenerCategorias();
+    } catch (error) {
+        mostrarError(error, "Error al guardar la categoría");
+    } finally {
+        loadingCategoriaForm.value = false;
+    }
+};
+
+const eliminarCategoria = (id: number) => {
+    ElMessageBox.confirm(
+        "¿Estás seguro de querer eliminar esta categoría? También se eliminarán sus ítems.",
+        "Confirmación",
+        { confirmButtonText: "Eliminar", cancelButtonText: "Cancelar", type: "warning" }
     )
         .then(async () => {
-            const urlCatCrit = "http://127.0.0.1:8000/api/categorias/borrar/";
-            await axios.delete(urlCatCrit + id);
-            await obtenerCriterios();
-            ElMessage({
-                type: "success",
-                message: "Criterio eliminado correctamente",
-            });
+            try {
+                await api.delete(ENDPOINTS.CATEGORIA_BORRAR(id));
+                ElMessage.success("Categoría eliminada correctamente");
+                await obtenerCategorias();
+            } catch (error) {
+                mostrarError(error, "Error al eliminar la categoría");
+            }
         })
         .catch(() => {
-            ElMessage({
-                type: "info",
-                message: "Eliminación cancelada",
-            });
+            // Eliminación cancelada por el usuario
         });
 };
 
-const limpiarFormulario = () => {
-    refForm.value?.limpiarFormulario();
-    mostrarFormulario.value = false;
-    editandoFormulario.value = false;
-    dataCriterio.value = undefined;
+// --- Ítems ---
+const drawerItemVisible = ref(false);
+const editandoItem = ref(false);
+const refFormItem = ref();
+
+const abrirNuevoItem = (categoriaRow: Categoria) => {
+    editandoItem.value = false;
+    drawerItemVisible.value = true;
+    refFormItem.value?.cargarDatos({ id_categorias_criterios: categoriaRow.id });
+};
+
+const editarItem = (_categoriaRow: Categoria, itemRow: Item) => {
+    editandoItem.value = true;
+    drawerItemVisible.value = true;
+    refFormItem.value?.cargarDatos(itemRow);
+};
+
+const guardarItem = async () => {
+    const valido = await refFormItem.value?.validarForm();
+    if (!valido) return;
+
+    loadingItemForm.value = true;
+    try {
+        const form = refFormItem.value.form;
+        const payload = {
+            nombre: form.nombre.trim(),
+            descripcion: form.descripcion.trim(),
+            id_categorias_criterios: form.id_categorias_criterios,
+            niveles: form.niveles.map((n: Nivel) => ({ nivel: n.nivel, descripcion: n.descripcion.trim() })),
+        };
+
+        if (editandoItem.value && form.id) {
+            await api.put(ENDPOINTS.ITEMS_ACTUALIZAR(form.id), payload);
+            ElMessage.success("Ítem actualizado correctamente");
+        } else {
+            await api.post(ENDPOINTS.ITEMS_GUARDAR, payload);
+            ElMessage.success("Ítem creado correctamente");
+        }
+
+        drawerItemVisible.value = false;
+        await obtenerCategorias();
+    } catch (error) {
+        mostrarError(error, "Error al guardar el ítem");
+    } finally {
+        loadingItemForm.value = false;
+    }
+};
+
+const cambiarEstadoItem = async (item: Item, activo: boolean) => {
+    try {
+        await api.patch(ENDPOINTS.ITEMS_ESTADO(item.id), { activo });
+        ElMessage.success(`Ítem ${activo ? "activado" : "desactivado"} correctamente`);
+    } catch (error) {
+        item.activo = !activo;
+        mostrarError(error, "Error al cambiar el estado del ítem");
+    }
 };
 
 onMounted(() => {
-    obtenerCriterios();
+    obtenerCategorias();
 });
-
-interface Criterio {
-    id: number;
-    criterio: string;
-    id_categorias_criterios: number;
-}
-
-interface CategoriaResponse {
-    id: number;
-    categoria: string;
-    descripcion: string;
-    criterios: Criterio[];
-}
-
-interface CriterioMapped extends CategoriaResponse {
-    criterio1?: string;
-    criterio2?: string;
-    criterio3?: string;
-    criterio4?: string;
-    criterio5?: string;
-}
 </script>
 
 <style scoped>
 .el-table {
     text-align: center;
     width: 100%;
-    height: 100%;
+}
+
+.items-panel {
+    padding: 10px 20px;
+    background-color: #fafafa;
+}
+
+.items-panel__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.items-panel__titulo {
+    font-weight: bold;
+    color: #606266;
 }
 </style>

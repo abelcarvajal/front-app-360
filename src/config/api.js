@@ -52,12 +52,18 @@ export const ENDPOINTS = {
   // === Detalle de evaluación ===
   DETALLE_GUARDAR: '/detalle/guardar',
 
-  // === Categorías / Criterios ===
+  // === Categorías de criterios ===
   CATEGORIAS_DATOS: '/categorias/datos',
   CATEGORIAS_GUARDAR: '/categorias/guardar',
   CATEGORIA_POR_ID: (id) => `/categorias/dataById/${id}`,
   CATEGORIA_ACTUALIZAR: (id) => `/categorias/actualizar/${id}`,
-  CATEGORIA_BORRAR: '/categorias/borrar',
+  CATEGORIA_BORRAR: (id) => `/categorias/borrar/${id}`,
+
+  // === Ítems de evaluación (nombre + descripción + 5 niveles cualitativos) ===
+  ITEMS_DATOS: '/items/datos',
+  ITEMS_GUARDAR: '/items/guardar',
+  ITEMS_ACTUALIZAR: (id) => `/items/actualizar/${id}`,
+  ITEMS_ESTADO: (id) => `/items/estado/${id}`,
 
   // === Colaboradores y datos asociados ===
     TIPODOC_DATOS: '/tipodoc/datos',
