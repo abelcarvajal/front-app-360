@@ -55,7 +55,6 @@ export const ENDPOINTS = {
   // === Categorías de criterios ===
   CATEGORIAS_DATOS: '/categorias/datos',
   CATEGORIAS_GUARDAR: '/categorias/guardar',
-  CATEGORIA_POR_ID: (id) => `/categorias/dataById/${id}`,
   CATEGORIA_ACTUALIZAR: (id) => `/categorias/actualizar/${id}`,
   CATEGORIA_BORRAR: (id) => `/categorias/borrar/${id}`,
 
